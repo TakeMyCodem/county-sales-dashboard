@@ -36,11 +36,11 @@ Lightweight ADR-style log for the portfolio product.
 
 **Decision:** Do not invent grains by silent proportional splits.
 
-**Amendment (0.3.1):** The generator **does** emit real `partner × brand × month` and `county × brand × month`, modeled on ERP line facts (partner + Márka + period + nettó). Annual `brand_share` is derived from that series.
+**Amendment (0.3.1):** The generator emits real `partner × brand × month` and `county × brand × month`, modeled on ERP line facts (partner + Márka + period + nettó). Annual `brand_share` is derived from that series.
 
-**Still missing / soft-ignore:** `county × rep × month` and `partner × brand × week` — not fabricated; views must soft-ignore or show a note (D-07).
+**Amendment (0.3.2):** Also emits `partner × brand × week` and `county × rep × month`. Demo map/tables can filter brand and rep across period honestly without proportional heuristics.
 
-**UI consequence:** Brand + month filters must aggregate from `monthly_brand` / `monthly_by_brand`. The old “annual share × selected months” heuristic is **retired** where the new grain exists.
+**UI consequence:** Brand + period → `monthly_brand` / `weekly_brand` / `monthly_by_brand`. Rep + period on map → `monthly_by_rep`. The old annual-share×months heuristic is **retired** where these grains exist.
 **Why:** Matches real weekly/daily export shape without shipping employer data.
 
 ---
@@ -63,6 +63,6 @@ Lightweight ADR-style log for the portfolio product.
 
 ## D-07 — Visible limits
 
-**Decision:** When a view is degraded (e.g. no week-county grain), show a short note in the UI.
+**Decision:** When a view is degraded (e.g. missing grain), show a short note in the UI.
 **Why:** Trust.
 **Consequence:** Empty grey map + message beats silent zeros.
