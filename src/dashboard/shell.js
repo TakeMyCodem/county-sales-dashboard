@@ -201,4 +201,8 @@ function boot() {
   if (TAB_META.length) setActiveTab(TAB_META[0].id);
 }
 
-document.addEventListener("DOMContentLoaded", boot);
+// Run once the DOM exists. In a normal page load that's on DOMContentLoaded; when
+// this script is injected after parsing (e.g. a published Artifact), the event has
+// already fired, so boot immediately.
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
