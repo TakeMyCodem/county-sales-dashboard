@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Generate deterministic synthetic sales data for the portfolio dashboard.
 
+Models line-level ERP grain (month/week + partner + brand + net) rolled up to
+aggregates the UI needs — including partner × brand × month (honest brand filters).
+
 Seed is fixed so totals are stable across machines (interview demos).
 No real CRM/ERP input — public-repo safe.
 """
@@ -69,10 +72,24 @@ def _normalized_shares(shares: dict[str, float], ndigits: int = 4) -> dict[str, 
     return rounded
 
 
+def _split_month_across_brands(
+    month_total: float, mean_share: list[float], rng: random.Random
+) -> list[float]:
+    """Split one month's revenue across brands; slight noise around mean share, sum exact."""
+    if month_total <= 0:
+        return [0.0] * len(mean_share)
+    noisy = [max(0.02, s * rng.uniform(0.75, 1.25)) for s in mean_share]
+    s = sum(noisy)
+    parts = [month_total * (x / s) for x in noisy]
+    parts[-1] = month_total - sum(parts[:-1])
+    return parts
+
+
 def main() -> None:
     rng = random.Random(SEED)
     OUT.mkdir(parents=True, exist_ok=True)
     mw = _month_weights()
+    brand_ids = [b[0] for b in BRANDS]
 
     partners = []
     for i in range(1, N_PARTNERS + 1):
@@ -81,6 +98,7 @@ def main() -> None:
         annual_26 = rng.uniform(0.5e6, 25e6)
         growth = rng.uniform(0.85, 1.25)
         annual_25 = annual_26 / growth
+
         m26 = [annual_26 * w * rng.uniform(0.9, 1.1) for w in mw]
         m25 = [annual_25 * w * rng.uniform(0.9, 1.1) for w in mw]
         scale26 = annual_26 / max(sum(m26), 1)
@@ -88,17 +106,33 @@ def main() -> None:
         m26 = [x * scale26 for x in m26]
         m25 = [x * scale25 for x in m25]
 
-        brand_share = [rng.random() for _ in BRANDS]
-        bs = sum(brand_share)
-        brand_share = [x / bs for x in brand_share]
+        raw_bs = [rng.random() for _ in BRANDS]
+        sbs = sum(raw_bs) or 1.0
+        mean_share = [x / sbs for x in raw_bs]
 
-        weekly_26 = []
-        weekly_25 = []
-        for _w in WEEKS:
-            weekly_26.append(annual_26 / 52 * rng.uniform(0.7, 1.3))
-            weekly_25.append(annual_25 / 52 * rng.uniform(0.7, 1.3))
+        mb26 = {bid: [] for bid in brand_ids}
+        mb25 = {bid: [] for bid in brand_ids}
+        for mi in range(12):
+            for bid, val in zip(brand_ids, _split_month_across_brands(m26[mi], mean_share, rng)):
+                mb26[bid].append(val)
+            for bid, val in zip(brand_ids, _split_month_across_brands(m25[mi], mean_share, rng)):
+                mb25[bid].append(val)
 
-        plan = annual_26 * rng.uniform(0.9, 1.15)
+        m26 = [sum(mb26[bid][mi] for bid in brand_ids) for mi in range(12)]
+        m25 = [sum(mb25[bid][mi] for bid in brand_ids) for mi in range(12)]
+        annual_26 = sum(m26)
+        annual_25 = sum(m25)
+
+        brand_year = {bid: sum(mb26[bid]) for bid in brand_ids}
+        brand_share = _normalized_shares(
+            {bid: (brand_year[bid] / annual_26 if annual_26 else 0.0) for bid in brand_ids}
+        )
+
+        week_w = [rng.uniform(0.7, 1.3) for _ in WEEKS]
+        sw = sum(week_w)
+        weekly = [annual_26 * (x / sw) for x in week_w]
+
+        plan = annual_26 * rng.uniform(0.95, 1.15)
 
         partners.append(
             {
@@ -113,14 +147,15 @@ def main() -> None:
                     "m26": [round(x, 2) for x in m26],
                     "m25": [round(x, 2) for x in m25],
                 },
-                "weekly": {
-                    "weeks": WEEKS,
-                    "w26": [round(x, 2) for x in weekly_26],
-                    "w25": [round(x, 2) for x in weekly_25],
+                "monthly_brand": {
+                    bid: {
+                        "m26": [round(x, 2) for x in mb26[bid]],
+                        "m25": [round(x, 2) for x in mb25[bid]],
+                    }
+                    for bid in brand_ids
                 },
-                "brand_share": _normalized_shares(
-                    {BRANDS[j][0]: brand_share[j] for j in range(len(BRANDS))}
-                ),
+                "weekly": [round(x, 2) for x in weekly],
+                "brand_share": brand_share,
             }
         )
 
@@ -135,10 +170,16 @@ def main() -> None:
         for p in ps:
             by_rep[p["rep_id"]] = by_rep.get(p["rep_id"], 0.0) + sum(p["monthly"]["m26"])
         by_brand: dict[str, float] = {b[0]: 0.0 for b in BRANDS}
+        monthly_by_brand: dict[str, dict[str, list[float]]] = {
+            bid: {"m26": [0.0] * 12, "m25": [0.0] * 12} for bid in brand_ids
+        }
         for p in ps:
-            tot = sum(p["monthly"]["m26"])
-            for b, sh in p["brand_share"].items():
-                by_brand[b] += tot * sh
+            for bid in brand_ids:
+                y = sum(p["monthly_brand"][bid]["m26"])
+                by_brand[bid] += y
+                for mi in range(12):
+                    monthly_by_brand[bid]["m26"][mi] += p["monthly_brand"][bid]["m26"][mi]
+                    monthly_by_brand[bid]["m25"][mi] += p["monthly_brand"][bid]["m25"][mi]
         counties.append(
             {
                 "id": cid,
@@ -150,6 +191,13 @@ def main() -> None:
                 "monthly": {"m26": [round(x, 2) for x in m26], "m25": [round(x, 2) for x in m25]},
                 "by_rep": {k: round(v, 2) for k, v in by_rep.items()},
                 "by_brand": {k: round(v, 2) for k, v in by_brand.items()},
+                "monthly_by_brand": {
+                    bid: {
+                        "m26": [round(x, 2) for x in monthly_by_brand[bid]["m26"]],
+                        "m25": [round(x, 2) for x in monthly_by_brand[bid]["m25"]],
+                    }
+                    for bid in brand_ids
+                },
             }
         )
 
@@ -164,6 +212,15 @@ def main() -> None:
         "n_partners": N_PARTNERS,
         "n_counties": len(COUNTIES),
         "weeks": WEEKS,
+        "grains": [
+            "partner×month",
+            "partner×brand×month",
+            "partner×week",
+            "county×month",
+            "county×brand×month",
+            "county×rep (annual)",
+            "county×brand (annual)",
+        ],
         "company_ytd_26": round(company_26, 2),
         "company_ytd_25": round(company_25, 2),
         "company_plan": round(company_plan, 2),
@@ -179,7 +236,8 @@ def main() -> None:
 
     out_path = OUT / "world.json"
     out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Wrote {out_path}")
+    size_mb = out_path.stat().st_size / (1024 * 1024)
+    print(f"Wrote {out_path} ({size_mb:.2f} MB)")
     print(
         f"Company 2026 YTD: {meta['company_ytd_26']:,.0f}  |  "
         f"2025: {meta['company_ytd_25']:,.0f}  |  plan: {meta['company_plan']:,.0f}"

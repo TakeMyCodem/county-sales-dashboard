@@ -28,6 +28,7 @@ DATA = {
 | `n_partners` | number | 180 |
 | `n_counties` | number | 19 |
 | `weeks` | number[] | ISO week numbers present (1–32 demo) |
+| `grains` | string[] | Documented available grains |
 | `company_ytd_26` | number | HUF-like units; sum of partner monthly m26 |
 | `company_ytd_25` | number | Same for 2025 |
 | `company_plan` | number | Sum of partner `plan_annual` |
@@ -41,10 +42,10 @@ DATA = {
 | `county_id` / `county_name` | string | Single county (v1) |
 | `rep_id` / `rep_label` | string | |
 | `plan_annual` | number | |
-| `monthly.m26` / `m25` | number[12] | Index 0 = January |
-| `weekly.weeks` | number[] | Same as meta.weeks |
-| `weekly.w26` / `w25` | number[] | Parallel to weeks |
-| `brand_share` | `{ [brandId]: number }` | Sums to 1.0 |
+| `monthly.m26` / `m25` | number[12] | Index 0 = January; = sum of brands that month |
+| `monthly_brand` | `{ [brandId]: { m26: number[12], m25: number[12] } }` | **partner × brand × month** |
+| `weekly` | number[] | Parallel to `meta.weeks` (totals only; no brand×week yet) |
+| `brand_share` | `{ [brandId]: number }` | Annual mix **derived** from monthly_brand; sums to 1.0 |
 
 **Partner 2026 YTD** = `sum(monthly.m26)`.
 
@@ -57,7 +58,8 @@ DATA = {
 | `ytd_26` / `ytd_25` / `yoy` | number | Annual |
 | `monthly.m26` / `m25` | number[12] | County sum of partners |
 | `by_rep` | `{ [repId]: number }` | Annual 2026 |
-| `by_brand` | `{ [brandId]: number }` | Annual 2026 (from partner brand_share × partner YTD) |
+| `by_brand` | `{ [brandId]: number }` | Annual 2026 (sum of monthly_brand) |
+| `monthly_by_brand` | `{ [brandId]: { m26: number[12], m25: number[12] } }` | **county × brand × month** |
 
 ### Brands (synthetic, 3 majors + catch-all)
 
@@ -76,19 +78,28 @@ DATA = {
 2. `sum(counties.ytd_26) == meta.company_ytd_26` (±1)
 3. Same seed → same `company_ytd_26`
 4. Each `brand_share` sums to 1.0
+5. For every partner/month: `sum_brands(monthly_brand[*].m26[m]) == monthly.m26[m]`
+6. For every county/month: `sum_brands(monthly_by_brand[*].m26[m]) == monthly.m26[m]`
 
 Tested in `tests/test_synthetic_world.py`.
 
 ---
 
-## Grains available vs not (v1)
+## Grains (v0.3.1+)
 
-| Grain | Available |
-|-------|-----------|
-| partner × month | yes |
-| partner × week | yes |
-| county × month | yes (`counties[].monthly`) |
-| county × rep annual | yes (`by_rep`) |
-| county × brand annual | yes (`by_brand`) |
-| county × brand × month | **no** — do not fabricate |
-| county × rep × month | **no** — do not fabricate |
+Source model: line-level ERP facts (partner + brand + period + net) rolled up — same *shape* as weekly/daily exports, synthetic numbers only.
+
+| Grain | Location | Notes |
+|-------|----------|--------|
+| partner × month | `partners[].monthly` | |
+| **partner × brand × month** | `partners[].monthly_brand` | Honest brand+period filters |
+| partner × week | `partners[].weekly` | Totals only |
+| annual brand mix | `partners[].brand_share` | Derived |
+| county × month | `counties[].monthly` | |
+| county × brand (annual) | `counties[].by_brand` | |
+| **county × brand × month** | `counties[].monthly_by_brand` | Map-ready |
+| county × rep (annual) | `counties[].by_rep` | |
+| county × rep × month | **no** | Soft-ignore / D-07 |
+| partner × brand × week | **no** | Soft-ignore / D-07 |
+
+**UI rule:** when brand **and** months are selected, aggregate from `monthly_brand` / `monthly_by_brand` — do **not** apply annual share as a proportional heuristic.
