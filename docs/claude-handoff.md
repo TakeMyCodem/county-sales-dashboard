@@ -53,7 +53,7 @@ python -m http.server 8765 --directory output
 - **Drill on county click:** KPI + **Alpha/Beta/Gamma brand cards** from `by_brand` + partner list + rep chips with **county-local share %**.
 
 ### Phase 4 — Brand heatmap tab
-- Chips Alpha/Beta/Gamma/Other → choropleth from `counties[].by_brand[id]` (annual only).
+- Chips Alpha/Beta/Gamma/Other → choropleth from `counties[].monthly_by_brand[id]`, period-aware over selected months (annual when all selected). `by_brand` remains the annual convenience total.
 
 ### Phase 5 — Hardening
 - Extend pytest (filter helpers if pure Python; keep generator invariants).
