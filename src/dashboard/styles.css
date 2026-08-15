@@ -284,6 +284,54 @@ code {
 .data-table tbody tr.row-hl { background: var(--accent-soft); }
 .data-table tbody tr.row-hl:hover { background: #cfe0fd; }
 
+/* ---- Counties map (P3) ---- */
+.mg-mapfilter { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.mg-mapfilter-lbl { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.mg-mp-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.mg-mp-btn { font-size: .8rem; padding: .35rem .7rem; background: #fff; border: none; cursor: pointer; color: var(--muted); }
+.mg-mp-btn.on { background: var(--accent); color: #fff; }
+.mg-mapfilter-note { font-size: .78rem; color: var(--muted); }
+.mg-muted { font-size: .78rem; color: var(--muted); }
+
+.mg-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+@media (max-width: 900px) { .mg-layout { grid-template-columns: 1fr; } }
+
+.mg-map-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: .8rem; }
+.mg-map { width: 100%; height: auto; display: block; }
+.mg-outline { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.mg-map .mg-county { stroke: #fff; stroke-width: 1; cursor: pointer; transition: opacity .1s; }
+.mg-map .mg-county:hover { opacity: .8; }
+.mg-map .mg-county.sel { stroke: var(--ink); stroke-width: 2.2; }
+.mg-map .mg-label { font-size: 9px; fill: #1f2937; pointer-events: none; text-anchor: middle; paint-order: stroke; stroke: rgba(255,255,255,.75); stroke-width: 2px; }
+
+.mg-legend { display: flex; align-items: center; gap: .5rem; margin-top: .6rem; font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mg-bar { height: .7rem; width: 9rem; border-radius: 3px; display: inline-block; }
+.mg-bar-seq { background: linear-gradient(90deg, rgb(224,237,255), rgb(30,58,138)); }
+.mg-bar-div { background: linear-gradient(90deg, rgb(220,38,38), rgb(229,231,235), rgb(5,150,105)); }
+
+.mg-table-side .table-wrap { max-height: none; }
+
+.mg-drill { margin-top: 1.3rem; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.1rem 1.25rem; }
+.mg-drill-empty { color: var(--muted); text-align: center; border-style: dashed; }
+.mg-drill-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+.mg-drill-head h3 { margin: 0; font-size: 1.1rem; }
+.mg-drill-close { border: 1px solid var(--line); background: #fff; border-radius: 6px; width: 1.8rem; height: 1.8rem; cursor: pointer; color: var(--muted); }
+.mg-drill-close:hover { border-color: var(--accent); color: var(--accent); }
+.mg-block-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 1rem 0 .5rem; }
+.mg-annual { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 0 .3rem; margin-left: .3rem; }
+
+.brand-cards { display: flex; flex-wrap: wrap; gap: .7rem; }
+.brand-card { flex: 1 1 8rem; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .6rem .75rem; }
+.brand-card.brand-hl { border-color: var(--accent); background: var(--accent-soft); }
+.brand-name { font-size: .78rem; font-weight: 600; }
+.brand-val { font-size: 1.05rem; font-weight: 700; margin-top: .2rem; font-variant-numeric: tabular-nums; }
+.brand-share { font-size: .72rem; color: var(--muted); }
+
+.rep-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.rep-chip { font-size: .76rem; padding: .28rem .6rem; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rep-chip:hover { border-color: var(--accent); }
+.rep-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
 /* ---- Stub tabs ---- */
 .stub {
   background: var(--panel);

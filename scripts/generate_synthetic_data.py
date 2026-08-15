@@ -39,6 +39,7 @@ COUNTIES = [
     ("KO", "Komárom-Esztergom"),
     ("NO", "Nógrád"),
     ("VA", "Vas"),
+    ("BK", "Bács-Kiskun"),
 ]
 
 REPS = [
