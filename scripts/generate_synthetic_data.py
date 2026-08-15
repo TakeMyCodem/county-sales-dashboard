@@ -95,6 +95,11 @@ def main() -> None:
     brand_ids = [b[0] for b in BRANDS]
     n_weeks = len(WEEKS)
 
+    # Per-county plan pressure so plan attainment (2026 ÷ plan) spreads across the
+    # 5-level RAG on the map. Without it, county aggregates cluster ~90–100% and the
+    # choropleth is a single amber band. Range spans <75% … ≥120%.
+    county_attain = {cid: rng.uniform(0.72, 1.25) for cid, _ in COUNTIES}
+
     partners = []
     for i in range(1, N_PARTNERS + 1):
         cid, cname = COUNTIES[rng.randrange(len(COUNTIES))]
@@ -148,7 +153,7 @@ def main() -> None:
         w26 = [sum(wb26[bid][wi] for bid in brand_ids) for wi in range(n_weeks)]
         w25 = [sum(wb25[bid][wi] for bid in brand_ids) for wi in range(n_weeks)]
 
-        plan = annual_26 * rng.uniform(0.95, 1.15)
+        plan = annual_26 / (county_attain[cid] * rng.uniform(0.95, 1.05))
 
         partners.append(
             {
