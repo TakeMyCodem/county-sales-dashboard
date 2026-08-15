@@ -22,7 +22,10 @@ def test_meta_and_counts():
     assert w["meta"]["synthetic"] is True
     assert w["meta"]["n_partners"] == len(w["partners"]) == 180
     assert w["meta"]["n_counties"] == len(w["counties"]) == 19
-    assert "partner×brand×month" in w["meta"]["grains"]
+    grains = w["meta"]["grains"]
+    assert "partner×brand×month" in grains
+    assert "partner×brand×week" in grains
+    assert "county×rep×month" in grains
 
 
 def test_company_ytd_matches_partners_and_counties():
@@ -41,7 +44,6 @@ def test_brand_shares_sum_to_one():
 
 
 def test_partner_brand_month_sums_to_monthly():
-    """ERP honesty: sum over brands of monthly_brand == monthly total per month."""
     w = _ensure_world()
     for p in w["partners"]:
         brands = list(p["monthly_brand"].keys())
@@ -50,6 +52,19 @@ def test_partner_brand_month_sums_to_monthly():
             s25 = sum(p["monthly_brand"][b]["m25"][mi] for b in brands)
             assert abs(s26 - p["monthly"]["m26"][mi]) < 0.05
             assert abs(s25 - p["monthly"]["m25"][mi]) < 0.05
+
+
+def test_partner_brand_week_sums_to_weekly():
+    w = _ensure_world()
+    n = len(w["meta"]["weeks"])
+    for p in w["partners"]:
+        brands = list(p["weekly_brand"].keys())
+        assert len(p["weekly"]["w26"]) == n
+        for wi in range(n):
+            s26 = sum(p["weekly_brand"][b]["w26"][wi] for b in brands)
+            s25 = sum(p["weekly_brand"][b]["w25"][wi] for b in brands)
+            assert abs(s26 - p["weekly"]["w26"][wi]) < 0.05
+            assert abs(s25 - p["weekly"]["w25"][wi]) < 0.05
 
 
 def test_brand_share_derived_from_monthly_brand():
@@ -69,6 +84,15 @@ def test_county_monthly_by_brand_sums_to_monthly():
         brands = list(c["monthly_by_brand"].keys())
         for mi in range(12):
             s = sum(c["monthly_by_brand"][b]["m26"][mi] for b in brands)
+            assert abs(s - c["monthly"]["m26"][mi]) < 0.5
+
+
+def test_county_monthly_by_rep_sums_to_monthly():
+    w = _ensure_world()
+    for c in w["counties"]:
+        reps = list(c["monthly_by_rep"].keys())
+        for mi in range(12):
+            s = sum(c["monthly_by_rep"][r]["m26"][mi] for r in reps)
             assert abs(s - c["monthly"]["m26"][mi]) < 0.5
 
 
