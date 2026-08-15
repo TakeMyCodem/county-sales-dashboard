@@ -4,15 +4,8 @@
  * state persists across global-filter re-renders via a caller-owned `ui` object.
  * The search input element is kept alive between redraws so focus/caret survive.
  *
- * Also: consistent D-04 (brand annual heuristic) and D-07 (week grain) notes.
+ * Also: honest period aggregation helper (partnerMonthsSum) and filter notes.
  */
-
-// Sum an array (e.g. monthly.m26) over selected month indexes.
-function sumMonths(arr, idxs) {
-  let s = 0;
-  for (const i of idxs) s += arr[i];
-  return s;
-}
 
 // config: { columns, rows, ui, search? }
 //   columns: [{ key, label, numeric?, align?, format?(row)->html }]
@@ -103,18 +96,28 @@ function buildDataTable(config) {
   return wrap;
 }
 
-// D-04: brand share is annual; note explains how it is applied in this view.
-function brandNote(state, mode) {
-  if (!state.brand) return "";
-  const bname = (DATA.brands.find((b) => b.id === state.brand) || {}).name || state.brand;
-  const how = mode === "annual"
-    ? "brand figures are annual (brand share &times; annual revenue); month/week filters are not applied here"
-    : "the annual brand share is applied proportionally to the selected period (demo heuristic)";
-  return `<div class="note"><strong>Brand filter (${bname}):</strong> ${how} — no brand&times;month grain exists (D-04).</div>`;
+// Honest partner period aggregation over selected months.
+// With a brand: partner × brand × month (monthly_brand); else the monthly total.
+// No proportional heuristic — the grain exists (data-contract v0.3.2+, D-04).
+function partnerMonthsSum(p, brand, idxs) {
+  const src = brand ? p.monthly_brand[brand] : p.monthly;
+  let v26 = 0, v25 = 0;
+  for (const i of idxs) { v26 += src.m26[i]; v25 += src.m25[i]; }
+  return { v26, v25 };
 }
 
-// D-07: week grain not honored by monthly-based views (weeks feed the Counties map, P3).
+// D-03: months and weeks are independent global Sets; monthly-grain views slice by
+// months, and the week set drives the Counties map (month|week XOR). Note shown when
+// the week selection is non-default so it's clear weeks don't change this view.
 function weekNote(state) {
   if (weeksAreDefault()) return "";
-  return `<div class="note"><strong>Week selection not applied here.</strong> This view aggregates on the monthly grain; the week set feeds the Counties map's week mode (P3) (D-07).</div>`;
+  return `<div class="note"><strong>Week selection not applied here.</strong> This view slices by month; the week set drives the Counties map's week mode (D-03).</div>`;
+}
+
+// Brand filter is honest at the month grain now; the only caveat is that plan
+// has no brand split, so plan attainment is hidden while a brand is selected.
+function brandFilterNote(state) {
+  if (!state.brand) return "";
+  const bname = (DATA.brands.find((b) => b.id === state.brand) || {}).name || state.brand;
+  return `<div class="note"><strong>Brand filter (${bname}):</strong> figures use the brand×month grain; plan attainment is hidden (plan is not split by brand).</div>`;
 }
