@@ -332,6 +332,14 @@ code {
 .rep-chip:hover { border-color: var(--accent); }
 .rep-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+/* ---- Brand heatmap (P4) ---- */
+.bh-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.bh-chips { display: inline-flex; gap: .3rem; flex-wrap: wrap; }
+.bh-chip { font-size: .8rem; padding: .35rem .75rem; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--muted); cursor: pointer; }
+.bh-chip:hover { border-color: var(--accent); color: var(--ink); }
+.bh-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.bh-sub { font-size: .78rem; color: var(--muted); }
+
 /* ---- Stub tabs ---- */
 .stub {
   background: var(--panel);

@@ -30,7 +30,7 @@ JS_MODULES = [
     SRC / "tabs" / "partners" / "partners.js",
     SRC / "tabs" / "counties" / "hu-counties-geo.js",
     SRC / "tabs" / "counties" / "counties.js",
-    SRC / "tabs" / "stubs.js",
+    SRC / "tabs" / "brand_heatmap" / "brand_heatmap.js",
 ]
 
 
