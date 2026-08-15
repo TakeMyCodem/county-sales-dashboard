@@ -34,15 +34,15 @@ On county click:
 
 ## Acceptance checklist
 
-- [ ] `python scripts/generate_synthetic_data.py` is deterministic (same seed → same totals)
-- [ ] `python scripts/build.py` writes `output/index.html`
-- [ ] Default company 2026 total matches sum of partners
-- [ ] Selecting one month changes Overview/Partners period panes and county map (month mode)
-- [ ] Clear restores default totals
-- [ ] County drill opens; brand cards non-zero for a high-revenue county
-- [ ] Brand heatmap tab recolors map by selected brand
-- [ ] `pytest -q` green
-- [ ] README screenshots (optional but recommended)
+- [x] `python scripts/generate_synthetic_data.py` is deterministic (same seed → same totals) — `test_seed_stable`
+- [x] `python scripts/build.py` writes `output/index.html` — `test_build_embeds_data_and_all_tabs`
+- [x] Default company 2026 total matches sum of partners — `test_company_ytd_matches_partners_and_counties`
+- [x] Selecting one month changes Overview/Partners period panes and county map (month mode) — verified in browser (P1) + aggregation checks (P3)
+- [x] Clear restores default totals — verified in browser (P1)
+- [x] County drill opens; brand cards non-zero for a high-revenue county — verified in browser (P3) + `monthly_by_brand` checks
+- [x] Brand heatmap tab recolors map by selected brand — verified via chip→repaint logic + `monthly_by_brand` checks (P4)
+- [x] `pytest -q` green — 12 passed
+- [ ] README screenshots (optional but recommended) — deferred to **P6** (needs browser capture)
 
 ## Non-goals (v1)
 
