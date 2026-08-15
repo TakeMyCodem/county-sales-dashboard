@@ -3,12 +3,14 @@
  * Geometry: hu-counties-geo.js (loaded before this module).
  *
  * Map paint (docs/decisions.md D-03, data-contract v0.3.2+ grains):
- *  - Map-local Month|Week XOR toggle picks WHICH global Set slices the map. The
- *    global bar stays dual (both Sets live); the toggle does not clear them.
- *  - Period subset (chosen kind ≠ all) -> period YoY (diverging); else 2026
- *    magnitude (sequential).
- *  - Rep active -> honest period source: month uses county×rep×month
- *    (monthly_by_rep); week rolls partner weekly up to county for that rep.
+ *  - Explicit view toggle (mirrors the source dashboard's switcher):
+ *      • Revenue  — 2026 magnitude (sequential)
+ *      • YoY      — period YoY (diverging)
+ *      • Plan     — 2026 ÷ annual plan, centred on 100% (annual; period soft-ignored)
+ *      • Dominant rep — categorical by leading rep (period-aware; ignores rep filter)
+ *  - Map-local Month|Week XOR toggle picks WHICH global Set slices Revenue/YoY/rep
+ *    views. The global bar stays dual; the toggle never clears the Sets.
+ *  - Rep filter narrows Revenue/YoY via county×rep×month (monthly_by_rep) / weekly rollup.
  *  - Brand does NOT recolor the map (that's the Brand heatmap tab, P4); a note is
  *    shown, and county brand mix appears in the drill.
  *
@@ -16,9 +18,19 @@
  * partner rollup when rep/week) + rep chips with county-local share % + partners.
  */
 
-const MAP_STATE = { kind: "month" };            // 'month' | 'week'
+const MAP_STATE = { kind: "month", view: "magnitude" }; // kind: month|week · view: magnitude|yoy|plan|rep
 const DRILL = { countyId: null, localRep: null };
 const COUNTY_UI = { sortKey: "v26", sortDir: "desc", query: "" };
+
+// Map views (mirrors the source dashboard's perf/yoy/rep switcher; vz legacy omitted).
+const MAP_VIEWS = [
+  { id: "magnitude", label: "💰 Revenue" },
+  { id: "yoy", label: "📈 YoY" },
+  { id: "plan", label: "🎯 Plan" },
+  { id: "rep", label: "👤 Dominant rep" },
+];
+// Categorical palette keyed to our synthetic reps (generic — no real identifiers).
+const REP_COLORS = { RA: "#2563eb", RB: "#16a34a", RC: "#d97706", RD: "#db2777", RE: "#0891b2" };
 
 let _partnersByCounty = null;
 function partnersByCounty(cid) {
@@ -100,15 +112,42 @@ function countyRepPeriod(county, rid) {
   return v;
 }
 
+// County annual plan target (sum of partner plans; respects global rep). Annual only.
+function countyPlan(county) {
+  let s = 0;
+  for (const p of partnersByCounty(county.id)) {
+    if (STATE.rep && p.rep_id !== STATE.rep) continue;
+    s += p.plan_annual;
+  }
+  return s;
+}
+
+// Dominant rep id for a county over the period (highest revenue).
+function countyDominantRep(county) {
+  let best = null, bestv = -1;
+  for (const rid of Object.keys(county.by_rep)) {
+    const v = countyRepPeriod(county, rid);
+    if (v > bestv) { bestv = v; best = rid; }
+  }
+  return best;
+}
+
+// Per-county value keyed by the active view. rep view returns a rep id (categorical).
 function paintModel() {
-  const subset = mapPeriodIsSubset();
-  const mode = subset ? "yoy" : "ytd";
+  const view = MAP_STATE.view;
   const vals = {};
   for (const c of DATA.counties) {
-    const per = countyPeriod(c);
-    vals[c.id] = subset ? per.yoy : per.v26;
+    if (view === "rep") { vals[c.id] = countyDominantRep(c); continue; }
+    if (view === "yoy") { vals[c.id] = countyPeriod(c).yoy; continue; }
+    if (view === "plan") {
+      const pl = countyPlan(c);
+      const rev = STATE.rep ? (c.by_rep[STATE.rep] || 0) : c.ytd_26; // annual (no monthly plan)
+      vals[c.id] = pl ? rev / pl : null;
+      continue;
+    }
+    vals[c.id] = countyPeriod(c).v26; // magnitude
   }
-  return { mode, vals };
+  return { view, vals };
 }
 
 /* ---- Colour scales ---- */
@@ -117,34 +156,44 @@ function _mix(c1, c2, t) { return `rgb(${_lerp(c1[0], c2[0], t)},${_lerp(c1[1], 
 const SEQ_LO = [224, 237, 255], SEQ_HI = [30, 58, 138];
 const DIV_NEG = [220, 38, 38], DIV_MID = [229, 231, 235], DIV_POS = [5, 150, 105];
 
-function colorFor(mode, v, ext) {
+function _diverge(t) { // t in [-1,1]
+  const c = Math.max(-1, Math.min(1, t));
+  return c < 0 ? _mix(DIV_MID, DIV_NEG, -c) : _mix(DIV_MID, DIV_POS, c);
+}
+function colorFor(view, v, ext) {
+  if (view === "rep") return v ? (REP_COLORS[v] || "#94a3b8") : "#e5e7eb";
   if (v === null || v === undefined || !isFinite(v)) return "#e5e7eb";
-  if (mode === "yoy") {
-    const m = ext.absMax || 1;
-    const t = Math.max(-1, Math.min(1, v / m));
-    return t < 0 ? _mix(DIV_MID, DIV_NEG, -t) : _mix(DIV_MID, DIV_POS, t);
-  }
-  const span = ext.max - ext.min || 1;
+  if (view === "yoy") return _diverge(v / (ext.absMax || 1));
+  if (view === "plan") return _diverge((v - 1) / (ext.planDev || 1)); // centred on 100%
+  const span = ext.max - ext.min || 1; // magnitude
   return _mix(SEQ_LO, SEQ_HI, (v - ext.min) / span);
 }
-function extentOf(vals) {
+function extentOf(view, vals) {
+  if (view === "rep") return {};
   const nums = Object.values(vals).filter((x) => x !== null && isFinite(x));
   const min = Math.min(...nums), max = Math.max(...nums);
-  return { min, max, absMax: Math.max(Math.abs(min), Math.abs(max)) };
+  return {
+    min, max,
+    absMax: Math.max(Math.abs(min), Math.abs(max), 0.01),
+    planDev: Math.max(...nums.map((x) => Math.abs(x - 1)), 0.01),
+  };
 }
 
 /* ---- Rendering ---- */
-function mapModeLabel(mode) {
-  const base = mode === "yoy"
-    ? `YoY % (${MAP_STATE.kind === "week" ? "selected weeks" : "selected months"})`
-    : "2026 revenue (magnitude)";
-  return STATE.rep ? `${base} · ${(DATA.reps.find((r) => r.id === STATE.rep) || {}).label || STATE.rep}` : base;
+function mapModeLabel(view) {
+  const per = MAP_STATE.kind === "week" ? "selected weeks" : "selected months";
+  let base;
+  if (view === "yoy") base = `YoY % (${per})`;
+  else if (view === "plan") base = "Plan attainment (annual)";
+  else if (view === "rep") base = "Dominant rep per county";
+  else base = `2026 revenue (${per})`;
+  return (STATE.rep && view !== "rep") ? `${base} · ${(DATA.reps.find((r) => r.id === STATE.rep) || {}).label || STATE.rep}` : base;
 }
 
 function renderMapSVG(model, ext) {
   const paths = HU_COUNTIES_GEO.map((g) => {
     const c = countyById(g.id);
-    const fill = c ? colorFor(model.mode, model.vals[g.id], ext) : "#e5e7eb";
+    const fill = c ? colorFor(model.view, model.vals[g.id], ext) : "#e5e7eb";
     const sel = DRILL.countyId === g.id ? " sel" : "";
     return `<path class="mg-county${sel}" data-id="${g.id}" d="${g.d}" fill="${fill}"><title>${c ? c.name : g.id}</title></path>`;
   }).join("");
@@ -157,8 +206,15 @@ function renderMapSVG(model, ext) {
 }
 
 function renderLegend(model, ext) {
-  if (model.mode === "yoy") {
+  if (model.view === "rep") {
+    const items = DATA.reps.map((r) => `<span class="mg-lg-item"><i class="mg-lg" style="background:${REP_COLORS[r.id] || "#94a3b8"}"></i>${r.label}</span>`).join("");
+    return `<div class="mg-legend mg-legend-cat">${items}</div>`;
+  }
+  if (model.view === "yoy") {
     return `<div class="mg-legend"><span>${fmtPct(-ext.absMax)}</span><span class="mg-bar mg-bar-div"></span><span>${fmtPct(ext.absMax)}</span></div>`;
+  }
+  if (model.view === "plan") {
+    return `<div class="mg-legend"><span>${((1 - ext.planDev) * 100).toFixed(0)}%</span><span class="mg-bar mg-bar-div"></span><span>${((1 + ext.planDev) * 100).toFixed(0)}%</span><span class="mg-lg-mid">100% = plan</span></div>`;
   }
   return `<div class="mg-legend"><span>${fmtMoney(ext.min)}</span><span class="mg-bar mg-bar-seq"></span><span>${fmtMoney(ext.max)}</span></div>`;
 }
@@ -250,23 +306,28 @@ function openDrill(id) { DRILL.countyId = id; DRILL.localRep = null; renderActiv
 
 function renderCounties(state, panel) {
   const model = paintModel();
-  const ext = extentOf(model.vals);
+  const ext = extentOf(model.view, model.vals);
 
-  const toggle = `<div class="mg-mapfilter">
+  const viewBtns = MAP_VIEWS.map((v) =>
+    `<button class="mg-view-btn${MAP_STATE.view === v.id ? " on" : ""}" data-view="${v.id}">${v.label}</button>`
+  ).join("");
+  const periodDisabled = MAP_STATE.view === "plan"; // plan is annual — period n/a
+  const toggle = `<div class="mg-view-toggle" role="group" aria-label="Map view">${viewBtns}</div>
+    <div class="mg-mapfilter">
       <span class="mg-mapfilter-lbl">Map period:</span>
       <div class="mg-mp-toggle" role="group" aria-label="Map period (month or week)">
-        <button class="mg-mp-btn${MAP_STATE.kind === "month" ? " on" : ""}" data-mp="month">🗓️ Month</button>
-        <button class="mg-mp-btn${MAP_STATE.kind === "week" ? " on" : ""}" data-mp="week">📅 Week</button>
+        <button class="mg-mp-btn${MAP_STATE.kind === "month" ? " on" : ""}${periodDisabled ? " off" : ""}" data-mp="month">🗓️ Month</button>
+        <button class="mg-mp-btn${MAP_STATE.kind === "week" ? " on" : ""}${periodDisabled ? " off" : ""}" data-mp="week">📅 Week</button>
       </div>
-      <span class="mg-mapfilter-note">${mapModeLabel(model.mode)}</span>
+      <span class="mg-mapfilter-note">${mapModeLabel(model.view)}</span>
     </div>`;
 
-  let notes = "";
-  if (state.brand) {
-    notes = `<div class="note"><strong>Brand filter not applied to map paint.</strong> Brand choropleth lives in the <strong>Brand heatmap</strong> tab (P4); county brand mix (period-aware) is in the drill below (D-03).</div>`;
-  }
+  const notes = [];
+  if (MAP_STATE.view === "plan") notes.push(`<div class="note"><strong>Plan view is annual.</strong> Plans have no monthly grain, so the map period is soft-ignored here; colour is 2026 revenue ÷ annual plan, centred on 100% (D-07).</div>`);
+  if (MAP_STATE.view === "rep") notes.push(`<div class="note"><strong>Dominant-rep view</strong> colours each county by its leading rep for the period (county×rep×month). The global rep filter is ignored in this view.</div>`);
+  if (state.brand) notes.push(`<div class="note"><strong>Brand filter not applied to map paint.</strong> Brand choropleth lives in the <strong>Brand heatmap</strong> tab (P4); county brand mix (period-aware) is in the drill below (D-03).</div>`);
 
-  panel.innerHTML = notes + toggle;
+  panel.innerHTML = notes.join("") + toggle;
   const layout = el('<div class="mg-layout"></div>');
   const mapWrap = el('<div class="mg-map-wrap"></div>');
   mapWrap.innerHTML = renderMapSVG(model, ext) + renderLegend(model, ext);
@@ -276,7 +337,8 @@ function renderCounties(state, panel) {
   panel.appendChild(layout);
   panel.appendChild(renderDrill());
 
-  panel.querySelectorAll(".mg-mp-btn").forEach((b) => b.addEventListener("click", () => { MAP_STATE.kind = b.dataset.mp; renderActiveTab(); }));
+  panel.querySelectorAll(".mg-view-btn").forEach((b) => b.addEventListener("click", () => { MAP_STATE.view = b.dataset.view; renderActiveTab(); }));
+  panel.querySelectorAll(".mg-mp-btn").forEach((b) => b.addEventListener("click", () => { if (!periodDisabled) { MAP_STATE.kind = b.dataset.mp; renderActiveTab(); } }));
   panel.querySelectorAll(".mg-map .mg-county").forEach((p) => p.addEventListener("click", () => openDrill(p.dataset.id)));
 }
 

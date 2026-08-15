@@ -285,6 +285,16 @@ code {
 .data-table tbody tr.row-hl:hover { background: #cfe0fd; }
 
 /* ---- Counties map (P3) ---- */
+.mg-view-toggle { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: .7rem; }
+.mg-view-btn { font-size: .8rem; font-weight: 600; padding: .35rem .8rem; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--muted); cursor: pointer; }
+.mg-view-btn:hover { background: var(--bg); color: var(--ink); }
+.mg-view-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.mg-mp-btn.off { opacity: .4; cursor: not-allowed; }
+.mg-legend-cat { flex-wrap: wrap; gap: .3rem .9rem; }
+.mg-lg-item { display: inline-flex; align-items: center; }
+.mg-lg { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .3rem; }
+.mg-lg-mid { color: var(--muted); }
+
 .mg-mapfilter { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .mg-mapfilter-lbl { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .mg-mp-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
