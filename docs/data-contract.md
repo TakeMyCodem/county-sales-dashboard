@@ -59,14 +59,14 @@ DATA = {
 | `by_rep` | `{ [repId]: number }` | Annual 2026 |
 | `by_brand` | `{ [brandId]: number }` | Annual 2026 (from partner brand_share × partner YTD) |
 
-### Brands (synthetic Big3+)
+### Brands (synthetic, 3 majors + catch-all)
 
 | id | name |
 |----|------|
-| BNZ | Brand North |
-| CXP | Brand Core |
-| WIZ | Brand West |
-| OTR | Brand Other |
+| ALPHA | Alpha Brand |
+| BETA | Beta Brand |
+| GAMMA | Gamma Brand |
+| OTHER | Other Brands |
 
 ---
 

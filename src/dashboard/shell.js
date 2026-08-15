@@ -117,7 +117,7 @@ function buildFilterBar() {
     <select class="filter-select" id="sel-brand"><option value="">All brands</option></select>
   </div>`);
   const brandSel = brandGroup.querySelector("select");
-  DATA.brands.forEach((b) => brandSel.appendChild(el(`<option value="${b.id}">${b.name} (${b.id})</option>`)));
+  DATA.brands.forEach((b) => brandSel.appendChild(el(`<option value="${b.id}">${b.name}</option>`)));
   brandSel.addEventListener("change", () => { STATE.brand = brandSel.value || null; notifyFilterChange(); });
 
   // Rep

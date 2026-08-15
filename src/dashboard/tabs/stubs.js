@@ -1,9 +1,8 @@
-/* Placeholder tabs for phases not yet implemented (P2–P4).
+/* Placeholder tabs for phases not yet implemented.
  *
  * These register real render fns so the shell's tab registry + pub/sub is
- * exercised end-to-end in P1 ("tab switch works"). Each is replaced in place
- * by its dedicated module in a later phase (see docs/claude-handoff.md):
- *   Reps / Brands / Partners -> P2   |   Counties -> P3   |   Brand heatmap -> P4
+ * exercised end-to-end. Each is replaced in place by its dedicated module in a
+ * later phase (see docs/claude-handoff.md):  Counties -> P3   |   Brand heatmap -> P4
  */
 
 function stubRenderer(title, phase, desc) {
@@ -16,12 +15,6 @@ function stubRenderer(title, phase, desc) {
   };
 }
 
-registerTab({ id: "reps", label: "Reps", soon: "P2" },
-  stubRenderer("Reps table", "P2", "Reps with 2026 / 2025 / YoY, respecting global brand &amp; period where grain allows."));
-registerTab({ id: "brands", label: "Brands", soon: "P2" },
-  stubRenderer("Brands table", "P2", "Brand revenue table, respecting global rep &amp; period where grain allows."));
-registerTab({ id: "partners", label: "Partners", soon: "P2" },
-  stubRenderer("Partners table", "P2", "Searchable partner table with global rep &amp; brand filters."));
 registerTab({ id: "counties", label: "Counties", soon: "P3" },
   stubRenderer("Counties map + drill", "P3", "Reactive HU county choropleth with per-county drill (KPI, brand cards, partners)."));
 registerTab({ id: "brand_heatmap", label: "Brand heatmap", soon: "P4" },
