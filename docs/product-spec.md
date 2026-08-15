@@ -42,7 +42,7 @@ On county click:
 - [x] County drill opens; brand cards non-zero for a high-revenue county — verified in browser (P3) + `monthly_by_brand` checks
 - [x] Brand heatmap tab recolors map by selected brand — verified via chip→repaint logic + `monthly_by_brand` checks (P4)
 - [x] `pytest -q` green — 12 passed
-- [ ] README screenshots (optional but recommended) — deferred to **P6** (needs browser capture)
+- [x] Product walkthrough — **live demo Artifact** linked from README (P6); static PNGs optional (`screenshots/`)
 
 ## Non-goals (v1)
 
