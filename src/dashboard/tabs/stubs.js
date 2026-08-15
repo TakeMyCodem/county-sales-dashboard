@@ -2,7 +2,7 @@
  *
  * These register real render fns so the shell's tab registry + pub/sub is
  * exercised end-to-end. Each is replaced in place by its dedicated module in a
- * later phase (see docs/claude-handoff.md):  Counties -> P3   |   Brand heatmap -> P4
+ * later phase (see docs/claude-handoff.md):  Brand heatmap -> P4
  */
 
 function stubRenderer(title, phase, desc) {
@@ -15,7 +15,5 @@ function stubRenderer(title, phase, desc) {
   };
 }
 
-registerTab({ id: "counties", label: "Counties", soon: "P3" },
-  stubRenderer("Counties map + drill", "P3", "Reactive HU county choropleth with per-county drill (KPI, brand cards, partners)."));
 registerTab({ id: "brand_heatmap", label: "Brand heatmap", soon: "P4" },
   stubRenderer("Brand heatmap", "P4", "Brand chips recolor the county map by annual brand revenue."));

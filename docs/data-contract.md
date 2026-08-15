@@ -26,7 +26,7 @@ DATA = {
 | `seed` | number | `20260815` |
 | `synthetic` | true | Always |
 | `n_partners` | number | 180 |
-| `n_counties` | number | 19 |
+| `n_counties` | number | 20 (Budapest + 19 counties) |
 | `weeks` | number[] | ISO week numbers present (1–32 demo) |
 | `grains` | string[] | Documented available grains |
 | `company_ytd_26` | number | HUF-like units; sum of partner monthly m26 |

@@ -21,7 +21,7 @@ def test_meta_and_counts():
     w = _ensure_world()
     assert w["meta"]["synthetic"] is True
     assert w["meta"]["n_partners"] == len(w["partners"]) == 180
-    assert w["meta"]["n_counties"] == len(w["counties"]) == 19
+    assert w["meta"]["n_counties"] == len(w["counties"]) == 20
     grains = w["meta"]["grains"]
     assert "partner×brand×month" in grains
     assert "partner×brand×week" in grains
