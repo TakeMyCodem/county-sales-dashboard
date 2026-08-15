@@ -32,11 +32,16 @@ Lightweight ADR-style log for the portfolio product.
 
 ---
 
-## D-04 — No fabricated cubes
+## D-04 — No fabricated cubes (amended 2026-08-15)
 
-**Decision:** If `county × brand × month` (or `county × rep × month`) is missing, **do not** invent it by proportional splits unless documented as a demo heuristic. Prefer annual brand heatmap + soft-ignore.
-**Why:** Portfolio should demonstrate data honesty, not chart theater.
-**Consequence:** Brand heatmap is annual; map+rep uses annual county×rep.
+**Decision:** Do not invent grains by silent proportional splits.
+
+**Amendment (0.3.1):** The generator **does** emit real `partner × brand × month` and `county × brand × month`, modeled on ERP line facts (partner + Márka + period + nettó). Annual `brand_share` is derived from that series.
+
+**Still missing / soft-ignore:** `county × rep × month` and `partner × brand × week` — not fabricated; views must soft-ignore or show a note (D-07).
+
+**UI consequence:** Brand + month filters must aggregate from `monthly_brand` / `monthly_by_brand`. The old “annual share × selected months” heuristic is **retired** where the new grain exists.
+**Why:** Matches real weekly/daily export shape without shipping employer data.
 
 ---
 
