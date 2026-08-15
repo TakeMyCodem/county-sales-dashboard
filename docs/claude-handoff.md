@@ -50,10 +50,10 @@ python -m http.server 8765 --directory output
 - Unfiltered: YTD or simple performance coloring.
 - Period subset, no rep → YoY from `counties[].monthly` or weekly partner rollup.
 - Rep active → annual `by_rep` magnitude (period soft-ignore — D-04).
-- **Drill on county click:** KPI + **BNZ/CXP/WIZ cards** from `by_brand` + partner list + rep chips with **county-local share %**.
+- **Drill on county click:** KPI + **Alpha/Beta/Gamma brand cards** from `by_brand` + partner list + rep chips with **county-local share %**.
 
 ### Phase 4 — Brand heatmap tab
-- Chips BNZ/CXP/WIZ/OTR → choropleth from `counties[].by_brand[id]` (annual only).
+- Chips Alpha/Beta/Gamma/Other → choropleth from `counties[].by_brand[id]` (annual only).
 
 ### Phase 5 — Hardening
 - Extend pytest (filter helpers if pure Python; keep generator invariants).

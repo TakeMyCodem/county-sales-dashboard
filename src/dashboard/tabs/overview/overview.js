@@ -97,7 +97,7 @@ function renderOverview(state, panel) {
     notes.push(`<div class="note"><strong>Brand filter (${bname}):</strong> brand share is an annual figure — it is applied proportionally to monthly revenue and plan as a demo heuristic (no brand&times;month grain exists, D-04).</div>`);
   }
   if (!weeksAreDefault()) {
-    notes.push(`<div class="note"><strong>Week selection ignored here.</strong> Overview uses the monthly grain; weekly slices drive the Partners view (D-07).</div>`);
+    notes.push(weekNote(state));
   }
 
   panel.innerHTML = `

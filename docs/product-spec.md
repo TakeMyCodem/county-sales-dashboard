@@ -13,7 +13,7 @@
 | **Reps** | Table of reps with 2026/2025/YoY; respects global brand/period where grain allows |
 | **Brands** | Brand table; respects global rep/period where grain allows |
 | **Partners** | Searchable partner table; global rep/brand filters |
-| **Counties** | Map + county table + drill overlay (KPI, brand cards BNZ-style synthetic Big3, partners) |
+| **Counties** | Map + county table + drill overlay (KPI, synthetic brand cards Alpha/Beta/Gamma, partners) |
 | **Brand heatmap** | Brand chips → county choropleth by annual brand revenue |
 
 ## Global filter bar
@@ -29,7 +29,7 @@
 On county click:
 
 1. KPI strip for that county (period-aware if monthly series exists).
-2. **Top-3 brand cards** for that county (annual brand split — synthetic Big3).
+2. **Top-3 brand cards** for that county (annual brand split — synthetic Alpha/Beta/Gamma).
 3. Partner list for that county (filterable by rep chips with **county-local share** %).
 
 ## Acceptance checklist

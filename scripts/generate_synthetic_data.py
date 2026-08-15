@@ -45,10 +45,10 @@ REPS = [
 ]
 
 BRANDS = [
-    ("BNZ", "Brand North"),
-    ("CXP", "Brand Core"),
-    ("WIZ", "Brand West"),
-    ("OTR", "Brand Other"),
+    ("ALPHA", "Alpha Brand"),
+    ("BETA", "Beta Brand"),
+    ("GAMMA", "Gamma Brand"),
+    ("OTHER", "Other Brands"),
 ]
 
 N_PARTNERS = 180

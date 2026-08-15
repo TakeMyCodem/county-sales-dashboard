@@ -20,10 +20,14 @@ WORLD = ROOT / "data" / "synthetic" / "world.json"
 OUT_DIR = ROOT / "output"
 OUT_HTML = OUT_DIR / "index.html"
 
-# Order matters: shell first, then tab modules.
+# Order matters: shell first, shared helpers next, then tab modules, stubs last.
 JS_MODULES = [
     SRC / "shell.js",
+    SRC / "tabs" / "_shared" / "ui.js",
     SRC / "tabs" / "overview" / "overview.js",
+    SRC / "tabs" / "reps" / "reps.js",
+    SRC / "tabs" / "brands" / "brands.js",
+    SRC / "tabs" / "partners" / "partners.js",
     SRC / "tabs" / "stubs.js",
 ]
 
