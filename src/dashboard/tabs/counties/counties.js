@@ -3,10 +3,10 @@
  * Geometry: hu-counties-geo.js (loaded before this module).
  *
  * Map paint (docs/decisions.md D-03, data-contract v0.3.2+ grains):
- *  - Explicit view toggle (mirrors the source dashboard's switcher):
+ *  - Explicit view toggle (mirrors the source dashboard's switcher; Plan is default):
+ *      • Plan     — 5-level RAG on 2026 ÷ annual plan (annual; period soft-ignored)
  *      • Revenue  — 2026 magnitude (sequential)
  *      • YoY      — period YoY (diverging)
- *      • Plan     — 2026 ÷ annual plan, centred on 100% (annual; period soft-ignored)
  *      • Dominant rep — categorical by leading rep (period-aware; ignores rep filter)
  *  - Map-local Month|Week XOR toggle picks WHICH global Set slices Revenue/YoY/rep
  *    views. The global bar stays dual; the toggle never clears the Sets.
@@ -18,15 +18,15 @@
  * partner rollup when rep/week) + rep chips with county-local share % + partners.
  */
 
-const MAP_STATE = { kind: "month", view: "magnitude" }; // kind: month|week · view: magnitude|yoy|plan|rep
+const MAP_STATE = { kind: "month", view: "plan" }; // kind: month|week · view: plan|magnitude|yoy|rep (plan = 5-level RAG, default)
 const DRILL = { countyId: null, localRep: null };
 const COUNTY_UI = { sortKey: "v26", sortDir: "desc", query: "" };
 
 // Map views (mirrors the source dashboard's perf/yoy/rep switcher; vz legacy omitted).
 const MAP_VIEWS = [
+  { id: "plan", label: "🎯 Plan (RAG)" },
   { id: "magnitude", label: "💰 Revenue" },
   { id: "yoy", label: "📈 YoY" },
-  { id: "plan", label: "🎯 Plan" },
   { id: "rep", label: "👤 Dominant rep" },
 ];
 // Categorical palette keyed to our synthetic reps (generic — no real identifiers).
@@ -160,11 +160,27 @@ function _diverge(t) { // t in [-1,1]
   const c = Math.max(-1, Math.min(1, t));
   return c < 0 ? _mix(DIV_MID, DIV_NEG, -c) : _mix(DIV_MID, DIV_POS, c);
 }
+
+// 5-level RAG for plan attainment (copied from the mother project's ENF_RAG_BANDS —
+// same colours + thresholds; English labels). v = 2026 revenue ÷ annual plan (1.0 = 100%).
+const RAG_BANDS = [
+  { min: 1.20, fill: "#15803d", label: "≥120%" },
+  { min: 1.00, fill: "#22c55e", label: "100–120%" },
+  { min: 0.90, fill: "#f59e0b", label: "90–100%" },
+  { min: 0.75, fill: "#f97316", label: "75–90%" },
+  { min: -Infinity, fill: "#dc2626", label: "<75%" },
+];
+function ragFill(v) {
+  if (v === null || v === undefined || !isFinite(v)) return "#cbd5e1";
+  for (const b of RAG_BANDS) if (v >= b.min) return b.fill;
+  return "#cbd5e1";
+}
+
 function colorFor(view, v, ext) {
   if (view === "rep") return v ? (REP_COLORS[v] || "#94a3b8") : "#e5e7eb";
+  if (view === "plan") return ragFill(v); // 5-level RAG (discrete)
   if (v === null || v === undefined || !isFinite(v)) return "#e5e7eb";
   if (view === "yoy") return _diverge(v / (ext.absMax || 1));
-  if (view === "plan") return _diverge((v - 1) / (ext.planDev || 1)); // centred on 100%
   const span = ext.max - ext.min || 1; // magnitude
   return _mix(SEQ_LO, SEQ_HI, (v - ext.min) / span);
 }
@@ -214,7 +230,8 @@ function renderLegend(model, ext) {
     return `<div class="mg-legend"><span>${fmtPct(-ext.absMax)}</span><span class="mg-bar mg-bar-div"></span><span>${fmtPct(ext.absMax)}</span></div>`;
   }
   if (model.view === "plan") {
-    return `<div class="mg-legend"><span>${((1 - ext.planDev) * 100).toFixed(0)}%</span><span class="mg-bar mg-bar-div"></span><span>${((1 + ext.planDev) * 100).toFixed(0)}%</span><span class="mg-lg-mid">100% = plan</span></div>`;
+    const items = RAG_BANDS.map((b) => `<span class="mg-lg-item"><i class="mg-lg" style="background:${b.fill}"></i>${b.label}</span>`).join("");
+    return `<div class="mg-legend mg-legend-cat">${items}<span class="mg-lg-mid">2026 ÷ plan</span></div>`;
   }
   return `<div class="mg-legend"><span>${fmtMoney(ext.min)}</span><span class="mg-bar mg-bar-seq"></span><span>${fmtMoney(ext.max)}</span></div>`;
 }
@@ -323,7 +340,7 @@ function renderCounties(state, panel) {
     </div>`;
 
   const notes = [];
-  if (MAP_STATE.view === "plan") notes.push(`<div class="note"><strong>Plan view is annual.</strong> Plans have no monthly grain, so the map period is soft-ignored here; colour is 2026 revenue ÷ annual plan, centred on 100% (D-07).</div>`);
+  if (MAP_STATE.view === "plan") notes.push(`<div class="note"><strong>Plan view is annual.</strong> Colour is a 5-level RAG on 2026 revenue ÷ annual plan; plans have no monthly grain, so the map period is soft-ignored here (D-07).</div>`);
   if (MAP_STATE.view === "rep") notes.push(`<div class="note"><strong>Dominant-rep view</strong> colours each county by its leading rep for the period (county×rep×month). The global rep filter is ignored in this view.</div>`);
   if (state.brand) notes.push(`<div class="note"><strong>Brand filter not applied to map paint.</strong> Brand choropleth lives in the <strong>Brand heatmap</strong> tab (P4); county brand mix (period-aware) is in the drill below (D-03).</div>`);
 
