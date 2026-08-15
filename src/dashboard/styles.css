@@ -1,0 +1,254 @@
+/* County Sales Dashboard — shell + Overview styles (P1).
+   Light, desktop-oriented portfolio theme. No external assets (offline-safe). */
+
+:root {
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --accent: #2563eb;
+  --accent-soft: #dbeafe;
+  --pos: #059669;
+  --neg: #dc2626;
+  --warn-bg: #fffbeb;
+  --warn-line: #fbbf24;
+  --bar26: #2563eb;
+  --bar25: #cbd5e1;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .04);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+code {
+  background: #f1f5f9;
+  padding: .1rem .35rem;
+  border-radius: 4px;
+  font-size: .85em;
+}
+
+/* ---- Header ---- */
+.app-header {
+  padding: 1.4rem 1.6rem .9rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.app-title { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.app-title h1 { font-size: 1.35rem; margin: 0; letter-spacing: -.01em; }
+.badge-synthetic {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid #bfdbfe;
+  padding: .18rem .5rem;
+  border-radius: 999px;
+}
+.app-sub { margin: .35rem 0 0; color: var(--muted); font-size: .85rem; }
+
+/* ---- Filter bar ---- */
+.filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem 1.6rem;
+  align-items: flex-start;
+  padding: 1rem 1.6rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.filter-group { display: flex; flex-direction: column; gap: .4rem; }
+.filter-group > .filter-label {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.filter-label .mini-clear {
+  font-size: .62rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.filter-label .mini-clear:hover { text-decoration: underline; }
+
+.pill-row { display: flex; flex-wrap: wrap; gap: .3rem; max-width: 30rem; }
+.pill {
+  font-size: .74rem;
+  font-variant-numeric: tabular-nums;
+  padding: .22rem .5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  transition: background .08s, color .08s, border-color .08s;
+}
+.pill:hover { border-color: var(--accent); }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pill-row.weeks { max-height: 5.4rem; overflow-y: auto; padding-right: .2rem; }
+
+.filter-select {
+  font-size: .82rem;
+  padding: .35rem .5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  min-width: 11rem;
+}
+
+.clear-all {
+  align-self: flex-end;
+  font-size: .8rem;
+  font-weight: 600;
+  padding: .45rem .9rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.clear-all:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- Tab bar ---- */
+.tabbar {
+  display: flex;
+  gap: .25rem;
+  padding: 0 1.6rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.tab-btn {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: .7rem .85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn .soon {
+  font-size: .6rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 .28rem;
+  margin-left: .35rem;
+  vertical-align: middle;
+}
+
+/* ---- Panels ---- */
+.panels { padding: 1.4rem 1.6rem 2.5rem; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ---- KPI strip ---- */
+.kpi-strip { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.4rem; }
+.kpi-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: .95rem 1.15rem;
+  min-width: 11rem;
+  flex: 1 1 11rem;
+}
+.kpi-card .kpi-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+}
+.kpi-card .kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: .3rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+.kpi-card .kpi-foot { font-size: .74rem; color: var(--muted); margin-top: .25rem; }
+.delta.pos { color: var(--pos); font-weight: 600; }
+.delta.neg { color: var(--neg); font-weight: 600; }
+
+/* ---- Chart ---- */
+.chart-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.25rem 1rem;
+}
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: .5rem; }
+.chart-head h2 { font-size: .95rem; margin: 0; }
+.chart-legend { display: flex; gap: 1rem; font-size: .74rem; color: var(--muted); }
+.chart-legend .swatch { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .3rem; vertical-align: middle; }
+.chart-svg { width: 100%; height: auto; display: block; margin-top: .6rem; overflow: visible; }
+.chart-svg .bar-dim { opacity: .32; }
+.chart-svg text { fill: var(--muted); font-size: 10px; }
+
+/* ---- Notes (D-07) ---- */
+.note {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  border-radius: 8px;
+  padding: .6rem .85rem;
+  font-size: .78rem;
+  color: #92400e;
+  margin-bottom: 1rem;
+}
+.note strong { color: #78350f; }
+
+/* ---- Stub tabs ---- */
+.stub {
+  background: var(--panel);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: var(--muted);
+}
+.stub h2 { color: var(--ink); font-size: 1.05rem; margin: 0 0 .4rem; }
+
+/* ---- Footer ---- */
+.app-footer {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.6rem 2rem;
+  color: var(--muted);
+  font-size: .76rem;
+  border-top: 1px solid var(--line);
+}
