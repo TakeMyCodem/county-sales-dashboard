@@ -2,8 +2,9 @@
  *
  * Grain: rep is a partner attribute; partner x month exists -> honest month slicing.
  *  - Month filter: sums selected months.  - Global rep filter: subsets to that rep.
- *  - Brand filter: annual brand_share applied proportionally to the period (D-04 note).
- *  - Week filter: not applied on the monthly grain (D-07 note).
+ *  - Brand filter: partner × brand × month (monthly_brand) — honest, no heuristic.
+ *    Plan attainment is hidden while a brand is selected (plan has no brand split).
+ *  - Week filter: not applied on the monthly grain; weeks drive the map (D-03 note).
  */
 
 const REPS_UI = { sortKey: "v26", sortDir: "desc", query: "" };
@@ -18,15 +19,14 @@ function repsRows(state) {
     for (const p of DATA.partners) {
       if (p.rep_id !== rep.id) continue;
       n++;
-      const sh = brand ? (p.brand_share[brand] || 0) : 1;
-      v26 += sumMonths(p.monthly.m26, idx) * sh;
-      v25 += sumMonths(p.monthly.m25, idx) * sh;
-      plan += p.plan_annual * sh;
+      const per = partnerMonthsSum(p, brand, idx); // brand×month grain when brand set
+      v26 += per.v26; v25 += per.v25;
+      plan += p.plan_annual; // annual, all-brand
     }
     rows.push({
       rep: rep.label, partners: n, v26, v25, plan,
       yoy: v25 ? v26 / v25 - 1 : null,
-      attain: plan ? v26 / plan : null,
+      attain: (plan && !brand) ? v26 / plan : null, // plan not split by brand
     });
   }
   return rows;
@@ -46,7 +46,7 @@ function renderReps(state, panel) {
     { key: "yoy", label: "YoY", numeric: true, format: yoyCell },
     { key: "attain", label: "Plan", numeric: true, format: (r) => (r.attain === null ? "—" : (r.attain * 100).toFixed(0) + "%") },
   ];
-  panel.innerHTML = brandNote(state, "period") + weekNote(state);
+  panel.innerHTML = brandFilterNote(state) + weekNote(state);
   panel.appendChild(buildDataTable({ columns, rows: repsRows(state), ui: REPS_UI }));
 }
 

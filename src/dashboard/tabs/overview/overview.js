@@ -4,10 +4,10 @@
  *  - Months filter: sums the selected month indexes (canonical annual series;
  *    all 12 selected -> equals meta.company_ytd_26, the baseline — D-05).
  *  - Rep filter: partner attribute -> subsets partners honestly.
- *  - Brand filter: brand_share is ANNUAL only. Applying it to monthly values is a
- *    documented demo heuristic (D-04); a visible note is shown when brand is active.
- *  - Weeks: independent grain (partner x week). Overview is month-based, so weeks do
- *    not change these KPIs. A note is shown when the week selection is non-default (D-07).
+ *  - Brand filter: partner × brand × month (monthly_brand) — honest, no heuristic.
+ *    Plan has no brand split, so plan attainment is hidden while a brand is selected.
+ *  - Weeks: independent grain. Overview is month-based, so weeks do not change these
+ *    KPIs; the week set drives the Counties map (D-03). Note shown when weeks ≠ all.
  */
 
 // Reduce filtered partners over selected months -> { s26, s25, plan, partnerCount, yoy, attain }.
@@ -19,19 +19,14 @@ function overviewAggregate(state) {
   for (const p of DATA.partners) {
     if (state.rep && p.rep_id !== state.rep) continue;
     partnerCount++;
-    let p26 = 0, p25 = 0;
-    for (const i of monthsIdx) { p26 += p.monthly.m26[i]; p25 += p.monthly.m25[i]; }
-    let pplan = p.plan_annual;
-    if (brand) {
-      const sh = p.brand_share[brand] || 0; // annual share applied proportionally (D-04 heuristic)
-      p26 *= sh; p25 *= sh; pplan *= sh;
-    }
-    s26 += p26; s25 += p25; plan += pplan;
+    const { v26, v25 } = partnerMonthsSum(p, brand, monthsIdx); // brand×month grain when brand set
+    s26 += v26; s25 += v25;
+    plan += p.plan_annual; // annual, all-brand (no brand-level plan grain)
   }
   return {
     s26, s25, plan, partnerCount,
     yoy: s25 ? s26 / s25 - 1 : null,
-    attain: plan ? s26 / plan : null,
+    attain: (plan && !brand) ? s26 / plan : null, // plan not split by brand
   };
 }
 
@@ -42,8 +37,8 @@ function overviewMonthlySeries(state) {
   const m25 = new Array(12).fill(0);
   for (const p of DATA.partners) {
     if (state.rep && p.rep_id !== state.rep) continue;
-    const sh = brand ? (p.brand_share[brand] || 0) : 1;
-    for (let i = 0; i < 12; i++) { m26[i] += p.monthly.m26[i] * sh; m25[i] += p.monthly.m25[i] * sh; }
+    const src = brand ? p.monthly_brand[brand] : p.monthly;
+    for (let i = 0; i < 12; i++) { m26[i] += src.m26[i]; m25[i] += src.m25[i]; }
   }
   return { m26, m25 };
 }
@@ -92,13 +87,8 @@ function renderOverview(state, panel) {
   const deltaCls = a.yoy === null ? "" : a.yoy >= 0 ? "pos" : "neg";
 
   const notes = [];
-  if (state.brand) {
-    const bname = (DATA.brands.find((b) => b.id === state.brand) || {}).name || state.brand;
-    notes.push(`<div class="note"><strong>Brand filter (${bname}):</strong> brand share is an annual figure — it is applied proportionally to monthly revenue and plan as a demo heuristic (no brand&times;month grain exists, D-04).</div>`);
-  }
-  if (!weeksAreDefault()) {
-    notes.push(weekNote(state));
-  }
+  if (state.brand) notes.push(brandFilterNote(state));
+  if (!weeksAreDefault()) notes.push(weekNote(state));
 
   panel.innerHTML = `
     ${notes.join("")}
@@ -106,7 +96,7 @@ function renderOverview(state, panel) {
       ${kpiCard("2026 revenue", fmtMoney(a.s26), `${monthsLabel} &middot; ${a.partnerCount} partners`)}
       ${kpiCard("2025 revenue", fmtMoney(a.s25), "same period")}
       ${kpiCard("YoY", `<span class="delta ${deltaCls}">${fmtPct(a.yoy)}</span>`, "2026 vs 2025")}
-      ${kpiCard("Plan attainment", a.attain === null ? "—" : (a.attain * 100).toFixed(0) + "%", `plan ${fmtMoney(a.plan)}`)}
+      ${kpiCard("Plan attainment", a.attain === null ? "—" : (a.attain * 100).toFixed(0) + "%", state.brand ? "plan not brand-split" : `plan ${fmtMoney(a.plan)}`)}
     </div>
     <div class="chart-card">
       <div class="chart-head">
